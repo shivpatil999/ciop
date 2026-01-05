@@ -35,8 +35,12 @@ jobs:
         env:
           CIOP_BASE_URL: ${{ secrets.CIOP_BASE_URL }}
         run: |
-          EVENT_URL="${CIOP_BASE_URL%/}/events"
-          echo "Posting deployment event to CIOP"
+          # Sanitize secret (removes hidden CR/LF and spaces that break curl)
+          BASE_URL="$(printf '%s' "$CIOP_BASE_URL" | tr -d '\r\n\t ' )"
+          EVENT_URL="${BASE_URL%/}/events"
+
+          # Safe debug: shows length only (won't reveal secret)
+          echo "CIOP_BASE_URL length: ${#BASE_URL}"
 
           curl -f -X POST "$EVENT_URL" \
             -H "Content-Type: application/json" \
@@ -52,4 +56,3 @@ jobs:
                 \"actor\": \"${{ github.actor }}\"
               }
             }"
-
