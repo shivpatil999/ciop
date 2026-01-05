@@ -27,7 +27,7 @@ jobs:
       - name: Start API and hit /health
         run: |
           nohup uvicorn app.main:app --host 127.0.0.1 --port 8000 &
-          sleep 2
+          sleep 3
           curl -f http://127.0.0.1:8000/health
 
       - name: Create deployment event in CIOP
@@ -35,18 +35,21 @@ jobs:
         env:
           CIOP_BASE_URL: ${{ secrets.CIOP_BASE_URL }}
         run: |
-          echo "Posting deployment event to $CIOP_BASE_URL/events"
-          curl -f -X POST "$CIOP_BASE_URL/events" \
+          EVENT_URL="${CIOP_BASE_URL%/}/events"
+          echo "Posting deployment event to CIOP"
+
+          curl -f -X POST "$EVENT_URL" \
             -H "Content-Type: application/json" \
-            -d '{
-              "type":"deployment",
-              "service":"ciop-api",
-              "env":"dev",
-              "message":"CI push deploy event from GitHub Actions",
-              "metadata":{
-                "repo":"'"${{ github.repository }}"'",
-                "sha":"'"${{ github.sha }}"'",
-                "ref":"'"${{ github.ref }}"'",
-                "actor":"'"${{ github.actor }}"'"
+            -d "{
+              \"type\": \"deployment\",
+              \"service\": \"ciop-api\",
+              \"env\": \"dev\",
+              \"message\": \"CI push deployment from GitHub Actions\",
+              \"metadata\": {
+                \"repo\": \"${{ github.repository }}\",
+                \"sha\": \"${{ github.sha }}\",
+                \"ref\": \"${{ github.ref }}\",
+                \"actor\": \"${{ github.actor }}\"
               }
-            }'
+            }"
+
